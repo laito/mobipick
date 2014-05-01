@@ -13,7 +13,8 @@
 $.widget( "sustainablepace.mobipick", $.mobile.widget, {
 	options: {
 		date            : null,
-		dateFormat      : "yyyy-MM-dd",
+		dateFormat      : "yyyy-MM-dd HH:mm:ss",
+		dateFormatSecond : "yyyy-MM-dd HH:mm:ss",
 		dateFormatMonth : "yyyy-MM",
 		dateFormatYear  : "yyyy",
 		locale          : "en",
@@ -71,6 +72,7 @@ $.widget( "sustainablepace.mobipick", $.mobile.widget, {
             evt.stopPropagation();
             evt.preventDefault();
         }
+		console.log("wtf9");
 		var date = this._getDate();
 		if( !this._isXDate( date ) ) {
 			date = new XDate();
@@ -101,7 +103,13 @@ $.widget( "sustainablepace.mobipick", $.mobile.widget, {
 			".mobipick-prev-year"  : "_prevYear",
 			".mobipick-next-day"   : "_nextDay",
 			".mobipick-next-month" : "_nextMonth",
-			".mobipick-next-year"  : "_nextYear"
+			".mobipick-next-year"  : "_nextYear",
+			".mobipick-next-second"  : "_nextSecond",
+			".mobipick-next-minute"  : "_nextMinute",
+			".mobipick-next-hour"  : "_nextHour",
+			".mobipick-prev-second"  : "_prevSecond",
+			".mobipick-prev-minute"  : "_prevMinute",
+			".mobipick-prev-hour"  : "_prevHour"
 		};
 		for( var selector in selectorMap ) {
 			(function() {
@@ -116,10 +124,12 @@ $.widget( "sustainablepace.mobipick", $.mobile.widget, {
 		this._hideView();
 	},
 	_handleDate: function( dateHandler ) {
+		console.log("WTf2");
 		this._setOption( "date", this._fitDate( dateHandler.apply( this ) ) );
 		return false;
 	},
 	_confirmDate: function() {
+		console.log("WTf3");
 		var proceed    = true,
 		    dateDiff   = this._getDate().diffDays( this.options.originalDate ),
 		    hasChanged = dateDiff !== 0 || this.element.val() === "";
@@ -138,6 +148,7 @@ $.widget( "sustainablepace.mobipick", $.mobile.widget, {
 		return false;
 	},
 	_cancelDate: function() {
+		console.log("WTf4");
 		this._setOption( "date", this.options.originalDate );
 		this._close();
 		return false;
@@ -148,9 +159,13 @@ $.widget( "sustainablepace.mobipick", $.mobile.widget, {
 		}
 	},
 	_setOption: function( key, val ) {
+	console.log("WTf10");
 		switch( key ) {
 			case "date":
+				console.log("WTf5");
+				console.log(val);
 				var sane = this._sanitizeDate( val );
+				console.log(sane);
 				this.options[ key ] = sane ? sane.toDate() : sane;
 				break;
 			case "originalDate":
@@ -178,9 +193,10 @@ $.widget( "sustainablepace.mobipick", $.mobile.widget, {
 	// Model
 	//
 	_sanitizeDate: function( date ) {
+		console.log("WTf6");
 		if( date === null ) {
 			return null;
-		}
+		}	
 		var d = date;
 		if( typeof d === "string" ) {
 			d = new XDate( d );
@@ -191,7 +207,7 @@ $.widget( "sustainablepace.mobipick", $.mobile.widget, {
 		if( !this._isDate( d ) ) {
 			throw "Parameter 'date' must be a Date.";
 		}
-		return new XDate( d.getFullYear(), d.getMonth(), d.getDate() );
+		return new XDate( d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds() );
 	},
 	_sanitizeMinDate: function( date ) {
 		var minDate = this._sanitizeDate( date );
@@ -209,15 +225,22 @@ $.widget( "sustainablepace.mobipick", $.mobile.widget, {
 	},
 	_getDateFormat: function() {
 		switch( this.options.accuracy ) {
+			case "hour":
+				return "dateFormatHour";
+			case "minute":
+				return "dateFormatMinute";
+			case "second":
+				return "dateFormatSecond";
 			case "month":
 				return "dateFormatMonth";
 			case "year":
 				return "dateFormatYear";
 			default:
-				return "dateFormat";
+				return "dateFormatSecond";
 		}
 	},
 	dateString: function() {
+		console.log("wtf7");
 		var format = this._getDateFormat(),
 		    date   = this._getDate();
 		return !date ? '' : date.toString( this.options[ format ] );
@@ -226,12 +249,13 @@ $.widget( "sustainablepace.mobipick", $.mobile.widget, {
 		var l    = this.options.locale,
 		    a    = this._getDateFormat(),
 		    date = this._getDate();
-
+		return !date ? '' : date.toString("ddd yyyy-MM-dd HH:mm:ss");
 		return !date ? '' : date.toString(
 			this._isValidLocale( l ) ? XDate.locales[ l ][ a ] : this.options[ a ]
 		);
 	},
 	_fitDate: function( d ) {
+		console.log("wtf8");
 		return this._isAfterMaxDate( d ) ? this._getMaxDate() :
 			( this._isBeforeMinDate( d ) ? this._getMinDate() : d );
 	},
@@ -263,6 +287,24 @@ $.widget( "sustainablepace.mobipick", $.mobile.widget, {
 	_getDate: function() {
 		var date = this.options.date;
 		return this._isDate( date ) ? new XDate( date ) : null;
+	},
+	_nextSecond: function() {
+		return this._addSeconds( 1 );
+	},
+	_prevSecond: function() {
+		return this._addSeconds( -1 );
+	},
+	_nextMinute: function() {
+		return this._addMinutes( 1 );
+	},
+	_prevMinute: function() {
+		return this._addMinutes( -1 );
+	},
+	_nextHour: function() {
+		return this._addHours( 1 );
+	},
+	_prevHour: function() {
+		return this._addHours( -1 );
 	},
 	_prevDay: function() {
 		return this._addDay( -1 );
@@ -296,11 +338,82 @@ $.widget( "sustainablepace.mobipick", $.mobile.widget, {
 		    n  = XDate.getDaysInMonth( dt.getFullYear(), dt.getMonth() );
 		return dt.setDate( ( dt.getDate() - 1 + n + d ) % n + 1 );
 	},
+	_addSeconds: function( d ) {
+		var date     = this._getDate(),
+			seconds = date.getSeconds(),
+			newSeconds = ( 60 + seconds + d ) % 60;
+		return date.setSeconds(newSeconds, true);
+	},
+	_addMinutes: function( m ) {
+		var date     = this._getDate(),
+			minutes = date.getMinutes(),
+			newMinutes = ( 60 + minutes +  m ) % 60;
+		return date.setMinutes(newMinutes, true);
+	},
+	_addHours: function( h ) {
+		var date     = this._getDate(),
+			hours = date.getHours(),
+			newHours = ( 24 + hours + h ) % 24;
+		//this._setOption('date',date.setHours(newHours, true))	;
+		return date.setHours(newHours, true);
+	},
 
 	//
 	// View
 	//
-	_markup: "<div class='mobipick-main'><div class='mobipick-date-formatted'>Date</div><ul class='mobipick-groups'><li><ul><li><a class='mobipick-next-day'>+</a></li><li><input type='text' class='mobipick-input mobipick-day' /></li><li><a class='mobipick-prev-day'>-</a></li></ul></li><li><ul><li><a class='mobipick-next-month'>+</a></li><li><input type='text' class='mobipick-input mobipick-month' /></li><li><a class='mobipick-prev-month'>-</a></li></ul></li><li><ul><li><a class='mobipick-next-year'>+</a></li><li><input type='text' class='mobipick-input mobipick-year' /></li><li><a class='mobipick-prev-year'>-</a></li></ul></li></ul><ul class='mobipick-buttons'><li><a class='mobipick-set'>Set</a></li><li><a class='mobipick-cancel'>Cancel</a></li></ul></div>",
+	_markup: "<div class='mobipick-main'>\
+					<div class='mobipick-date-formatted'>Date</div>\
+					<ul class='mobipick-groups'>\
+						<li>\
+							<ul>\
+								<li><a class='mobipick-next-day'>+</a></li>\
+								<li><input type='text' class='mobipick-input mobipick-day' /></li>\
+								<li><a class='mobipick-prev-day'>-</a></li>\
+							</ul>\
+						</li>\
+						<li>\
+							<ul>\
+								<li><a class='mobipick-next-month'>+</a></li>\
+								<li><input type='text' class='mobipick-input mobipick-month' /></li>\
+								<li><a class='mobipick-prev-month'>-</a></li>\
+							</ul>\
+						</li>\
+						<li>\
+							<ul>\
+								<li><a class='mobipick-next-year'>+</a></li>\
+								<li><input type='text' class='mobipick-input mobipick-year' /></li>\
+								<li><a class='mobipick-prev-year'>-</a></li>\
+							</ul>\
+						</li>\
+					</ul>\
+					<ul class='mobipick-groups'>\
+						<li>\
+							<ul>\
+								<li><a class='mobipick-next-hour'>+</a></li>\
+								<li><input type='text' class='mobipick-input mobipick-hour' /></li>\
+								<li><a class='mobipick-prev-hour'>-</a></li>\
+							</ul>\
+						</li>\
+						<li>\
+							<ul>\
+								<li><a class='mobipick-next-minute'>+</a></li>\
+								<li><input type='text' class='mobipick-input mobipick-minute' /></li>\
+								<li><a class='mobipick-prev-minute'>-</a></li>\
+							</ul>\
+						</li>\
+						<li>\
+							<ul>\
+								<li><a class='mobipick-next-second'>+</a></li>\
+								<li><input type='text' class='mobipick-input mobipick-second' /></li>\
+								<li><a class='mobipick-prev-second'>-</a></li>\
+							</ul>\
+						</li>\
+					</ul>\
+					<ul class='mobipick-buttons'>\
+						<li><a class='mobipick-set'><i class=\"fa fa-check\"></i></a></li>\
+						<li><a class='mobipick-cancel'><i class=\"fa fa-times\"></i></a></li>\
+					</ul>\
+				</div>",
 	_applyTheme: function() {
 		var p       = this._picker,
 		    buttons = {
@@ -329,11 +442,15 @@ $.widget( "sustainablepace.mobipick", $.mobile.widget, {
 	_updateView: function() {
 		var date = this._getDate(),
 		    p    = this._picker;
-
+		console.log("wtf11");
+		console.log(date);
 		if( this._isXDate( date ) ) {
 			p.find( ".mobipick-year"  ).val( date.toString( "yyyy" ) );
 			p.find( ".mobipick-month" ).val( date.toString( "MMM"  ) );
 			p.find( ".mobipick-day"   ).val( date.toString( "dd"   ) );
+			p.find( ".mobipick-hour"  ).val( date.toString( "HH" ) );
+			p.find( ".mobipick-minute" ).val( date.toString( "mm"  ) );
+			p.find( ".mobipick-second"   ).val( date.toString( "ss"   ) );
 			p.find( ".mobipick-date-formatted" ).text( this.localeString() );
 		}
 		var locale = {};
@@ -342,8 +459,8 @@ $.widget( "sustainablepace.mobipick", $.mobile.widget, {
 			locale = XDate.locales[ this.options.locale ];
 		}
 
-		p.find( ".mobipick-set"    ).text( locale.ok     || "Set"    );
-		p.find( ".mobipick-cancel" ).text( locale.cancel || "Cancel" );
+		//p.find( ".mobipick-set"    ).text( locale.ok     || ""    );
+		//p.find( ".mobipick-cancel" ).text( locale.cancel || "" );
 
 		// Display items based on accuracy setting
 		var columns = p.find( ".mobipick-groups > li" )
@@ -361,11 +478,11 @@ $.widget( "sustainablepace.mobipick", $.mobile.widget, {
 				.siblings().addClass( "mobipick-hide" )
 				.removeClass( "mobipick-inline-block" );
 		} else {
-			p.css( "max-width", "300px" );
+			p.css( "max-width", "250px" );
 		}
 		// minus 1% margin (left and right) per column
-		var columnCount = columns.filter( ":visible" ).size(),
-		    width       = ( ( 100 - columnCount * 2 ) / columnCount ) + "%";
+		var columnCount = columns.filter( ":visible" ).size() - 3,
+		    width       = ( ( 100 - columnCount * 2 ) / columnCount ) - 1 + "%";
 		columns.css( "width", width );
 	},
 	_showView: function() {
@@ -378,6 +495,9 @@ $.widget( "sustainablepace.mobipick", $.mobile.widget, {
 		this.element.val( this.options.intlStdDate ?
 			this.dateString() : this.localeString()
 		);
+		epoch = this._getDate().getTime() / 1000.0;
+		
+		this.element.attr( 'epoch', epoch);
 	}
 });
 }( jQuery ) );
